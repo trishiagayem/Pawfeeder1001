@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
    FIREBASE ADMIN INITIALIZATION
 ================================ */
 
-let db: admin.firestore.Firestore;
+let db: admin.firestore.Firestore | null = null;
 
 try {
   admin.initializeApp({
@@ -46,8 +46,6 @@ async function initStations() {
         hopperLevels: { cat: 85, dog: 92 },
         lastSeen: admin.firestore.FieldValue.serverTimestamp(),
       });
-
-      console.log("📍 Initialized Alijis station");
     }
 
     const assetsRef = db.collection("assets").doc("global");
@@ -59,8 +57,6 @@ async function initStations() {
         vision: "A world where every stray has food access.",
         systemStatus: "Operational",
       });
-
-      console.log("🌐 Initialized global assets");
     }
   } catch (err) {
     console.error("Init error:", err);
@@ -75,14 +71,22 @@ async function startServer() {
   await initStations();
 
   const app = express();
-  const PORT = 3006;
+
+  // ✅ FIX: Railway PORT
+  const PORT = process.env.PORT || 3006;
 
   app.use(express.json());
 
   /* ================================
+     ✅ HEALTH CHECK (IMPORTANT)
+  ================================= */
+  app.get("/", (_, res) => {
+    res.send("🔥 Pawfeeder API is running");
+  });
+
+  /* ================================
      DISPENSE API
   ================================= */
-
   app.post("/api/dispense", async (req, res) => {
     if (!db) {
       return res.status(500).json({ error: "Database not initialized" });
@@ -96,7 +100,6 @@ async function startServer() {
 
     try {
       const logId = Math.random().toString(36).substring(7);
-
       const timestamp = admin.firestore.FieldValue.serverTimestamp();
 
       await db.collection("logs").doc(logId).set({
@@ -154,7 +157,6 @@ async function startServer() {
   /* ================================
      VITE FRONTEND
   ================================= */
-
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -173,7 +175,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running`);
+    console.log(`🚀 Server running on port ${PORT}`);
   });
 }
 

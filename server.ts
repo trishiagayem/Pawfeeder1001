@@ -8,130 +8,118 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /* ================================
-   FIREBASE ADMIN INITIALIZATION
+   FIREBASE INIT (SAFE)
 ================================ */
 
 let db: admin.firestore.Firestore | null = null;
 
 try {
-  admin.initializeApp({
-    credential: admin.credential.cert(
-      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT as string)
-    ),
-  });
+  const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-  db = admin.firestore();
-  console.log("🔥 Firebase Admin initialized successfully");
+  if (serviceAccountEnv) {
+    admin.initializeApp({
+      credential: admin.credential.cert(JSON.parse(serviceAccountEnv)),
+    });
+
+    db = admin.firestore();
+    console.log("🔥 Firebase Admin initialized successfully");
+  } else {
+    console.warn("⚠️ Firebase env not found, running without DB");
+  }
 } catch (error) {
   console.error("❌ Firebase init failed:", error);
 }
 
 /* ================================
-   INIT DEFAULT DATA
+   INIT DATA
 ================================ */
 
 async function initStations() {
   if (!db) return;
 
-  const alijisRef = db.collection("stations").doc("Alijis");
-  const doc = await alijisRef.get();
+  try {
+    const ref = db.collection("stations").doc("Alijis");
+    const doc = await ref.get();
 
-  if (!doc.exists) {
-    await alijisRef.set({
-      name: "Alijis",
-      lat: 10.6386,
-      lng: 122.9511,
-      address: "Alijis Road, Bacolod City",
-      plusCode: "8FVC+W2 Bacolod",
-      hopperLevels: { cat: 85, dog: 92 },
-      lastSeen: admin.firestore.FieldValue.serverTimestamp(),
-    });
-  }
-
-  const assetsRef = db.collection("assets").doc("global");
-  const assetsDoc = await assetsRef.get();
-
-  if (!assetsDoc.exists) {
-    await assetsRef.set({
-      mission: "Providing automated feeding solutions for strays.",
-      vision: "A world where every stray has food access.",
-      systemStatus: "Operational",
-    });
+    if (!doc.exists) {
+      await ref.set({
+        name: "Alijis",
+        lat: 10.6386,
+        lng: 122.9511,
+        address: "Alijis Road, Bacolod City",
+        hopperLevels: { cat: 85, dog: 92 },
+        lastSeen: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+  } catch (err) {
+    console.error("Init error:", err);
   }
 }
 
 /* ================================
-   SERVER START
+   START SERVER
 ================================ */
 
 async function startServer() {
-  await initStations();
-
   const app = express();
 
-  // ✅ RAILWAY FIX: MUST USE process.env.PORT
-const PORT = Number(process.env.PORT || 8080);
+  const PORT = Number(process.env.PORT || 8080);
 
   app.use(express.json());
 
   /* ================================
-     HEALTH CHECK (VERY IMPORTANT)
+     TEST ROUTE (IMPORTANT)
   ================================= */
   app.get("/", (_, res) => {
-    res.send("🔥 Pawfeeder API is running");
+    res.send("WORKING");
   });
 
   /* ================================
-     DISPENSE API
+     API ROUTE
   ================================= */
   app.post("/api/dispense", async (req, res) => {
-    if (!db) {
-      return res.status(500).json({ error: "Database not initialized" });
-    }
-
-    const { location, type, coins, catLevel, dogLevel, lat, lng } = req.body;
-
-    if (!location || !type || typeof coins !== "number") {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+    if (!db) return res.status(500).json({ error: "DB not ready" });
 
     try {
-      const logId = Math.random().toString(36).substring(7);
-      const timestamp = admin.firestore.FieldValue.serverTimestamp();
+      const { location, type, coins, lat, lng } = req.body;
 
-      await db.collection("logs").doc(logId).set({
+      if (!location || !type || typeof coins !== "number") {
+        return res.status(400).json({ error: "Missing fields" });
+      }
+
+      const id = Math.random().toString(36).substring(7);
+
+      await db.collection("logs").doc(id).set({
         location,
         type,
         coins,
         grams: coins * 2,
-        timestamp,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      const stationRef = db.collection("stations").doc(location);
-
-      await stationRef.set(
+      await db.collection("stations").doc(location).set(
         {
           name: location,
           hopperLevels: {
             cat: type === "Cat" ? 100 - coins : 100,
             dog: type === "Dog" ? 100 - coins : 100,
           },
-          lastSeen: timestamp,
           lat,
           lng,
+          lastSeen: admin.firestore.FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
 
-      res.status(201).json({ success: true, id: logId });
-    } catch (error) {
-      console.error("Dispense Error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.json({ success: true, id });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Server error" });
     }
   });
 
   /* ================================
-     VITE FRONTEND
+     VITE (FRONTEND)
   ================================= */
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -151,11 +139,13 @@ const PORT = Number(process.env.PORT || 8080);
   }
 
   /* ================================
-     START LISTENER (RAILWAY SAFE)
+     START LISTENING (RAILWAY SAFE)
   ================================= */
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+
+  initStations();
 }
 
 startServer();

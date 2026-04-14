@@ -4,9 +4,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import admin from "firebase-admin";
 
-admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
-});
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -14,18 +11,18 @@ const __dirname = path.dirname(__filename);
    FIREBASE ADMIN INITIALIZATION
 ================================ */
 
-let db: admin.firestore.Firestore | null = null;
+let db: admin.firestore.Firestore;
 
 try {
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+    credential: admin.credential.applicationDefault(),
   });
 
   db = admin.firestore();
 
   console.log("🔥 Firebase Admin initialized successfully");
 } catch (error) {
-  console.error("❌ Failed to initialize Firebase Admin:", error);
+  console.error("❌ Firebase init failed:", error);
 }
 
 /* ================================

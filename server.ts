@@ -15,8 +15,10 @@ let db: admin.firestore.Firestore | null = null;
 
 try {
   admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-  });
+  credential: admin.credential.cert(
+    JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT as string)
+  ),
+});
 
   db = admin.firestore();
   console.log("🔥 Firebase Admin initialized successfully");

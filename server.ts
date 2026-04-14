@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
    FIREBASE ADMIN INITIALIZATION
 ================================ */
 
-let db: admin.firestore.Firestore;
+let db: admin.firestore.Firestore | null = null;
 
 try {
   admin.initializeApp({
@@ -19,7 +19,6 @@ try {
   });
 
   db = admin.firestore();
-
   console.log("🔥 Firebase Admin initialized successfully");
 } catch (error) {
   console.error("❌ Firebase init failed:", error);
@@ -32,38 +31,30 @@ try {
 async function initStations() {
   if (!db) return;
 
-  try {
-    const alijisRef = db.collection("stations").doc("Alijis");
-    const doc = await alijisRef.get();
+  const alijisRef = db.collection("stations").doc("Alijis");
+  const doc = await alijisRef.get();
 
-    if (!doc.exists) {
-      await alijisRef.set({
-        name: "Alijis",
-        lat: 10.6386,
-        lng: 122.9511,
-        address: "Alijis Road, Bacolod City",
-        plusCode: "8FVC+W2 Bacolod",
-        hopperLevels: { cat: 85, dog: 92 },
-        lastSeen: admin.firestore.FieldValue.serverTimestamp(),
-      });
+  if (!doc.exists) {
+    await alijisRef.set({
+      name: "Alijis",
+      lat: 10.6386,
+      lng: 122.9511,
+      address: "Alijis Road, Bacolod City",
+      plusCode: "8FVC+W2 Bacolod",
+      hopperLevels: { cat: 85, dog: 92 },
+      lastSeen: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
 
-      console.log("📍 Initialized Alijis station");
-    }
+  const assetsRef = db.collection("assets").doc("global");
+  const assetsDoc = await assetsRef.get();
 
-    const assetsRef = db.collection("assets").doc("global");
-    const assetsDoc = await assetsRef.get();
-
-    if (!assetsDoc.exists) {
-      await assetsRef.set({
-        mission: "Providing automated feeding solutions for strays.",
-        vision: "A world where every stray has food access.",
-        systemStatus: "Operational",
-      });
-
-      console.log("🌐 Initialized global assets");
-    }
-  } catch (err) {
-    console.error("Init error:", err);
+  if (!assetsDoc.exists) {
+    await assetsRef.set({
+      mission: "Providing automated feeding solutions for strays.",
+      vision: "A world where every stray has food access.",
+      systemStatus: "Operational",
+    });
   }
 }
 
@@ -76,13 +67,13 @@ async function startServer() {
 
   const app = express();
 
-  // ✅ FIX: FORCE NUMBER TYPE (IMPORTANT FOR RAILWAY + TS)
-  const PORT: number = Number(process.env.PORT) || 3006;
+  // ✅ FIX: Railway uses process.env.PORT
+  const PORT: number = Number(process.env.PORT || 3006);
 
   app.use(express.json());
 
   /* ================================
-     HEALTH CHECK (IMPORTANT FOR RAILWAY)
+     SIMPLE HEALTH CHECK (IMPORTANT)
   ================================= */
   app.get("/", (_, res) => {
     res.send("🔥 Pawfeeder API is running");
@@ -159,9 +150,8 @@ async function startServer() {
   });
 
   /* ================================
-     VITE FRONTEND
+     VITE (PRODUCTION SAFE)
   ================================= */
-
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },

@@ -3,8 +3,10 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import admin from "firebase-admin";
-import serviceAccount from "./firebase-service-account.json" with { type: "json" };
 
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+});
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

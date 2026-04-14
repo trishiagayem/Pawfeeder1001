@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
    FIREBASE ADMIN INITIALIZATION
 ================================ */
 
-let db: admin.firestore.Firestore | null = null;
+let db: admin.firestore.Firestore;
 
 try {
   admin.initializeApp({
@@ -46,6 +46,8 @@ async function initStations() {
         hopperLevels: { cat: 85, dog: 92 },
         lastSeen: admin.firestore.FieldValue.serverTimestamp(),
       });
+
+      console.log("📍 Initialized Alijis station");
     }
 
     const assetsRef = db.collection("assets").doc("global");
@@ -57,6 +59,8 @@ async function initStations() {
         vision: "A world where every stray has food access.",
         systemStatus: "Operational",
       });
+
+      console.log("🌐 Initialized global assets");
     }
   } catch (err) {
     console.error("Init error:", err);
@@ -72,13 +76,13 @@ async function startServer() {
 
   const app = express();
 
-  // ✅ FIX: Railway PORT
-  const PORT = process.env.PORT || 3006;
+  // ✅ FIX: FORCE NUMBER TYPE (IMPORTANT FOR RAILWAY + TS)
+  const PORT: number = Number(process.env.PORT) || 3006;
 
   app.use(express.json());
 
   /* ================================
-     ✅ HEALTH CHECK (IMPORTANT)
+     HEALTH CHECK (IMPORTANT FOR RAILWAY)
   ================================= */
   app.get("/", (_, res) => {
     res.send("🔥 Pawfeeder API is running");
@@ -157,6 +161,7 @@ async function startServer() {
   /* ================================
      VITE FRONTEND
   ================================= */
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -174,6 +179,7 @@ async function startServer() {
     });
   }
 
+  // ✅ FIXED LISTEN (NO TYPE ERROR)
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`);
   });

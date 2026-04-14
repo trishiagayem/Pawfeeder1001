@@ -47,6 +47,17 @@ async function initStations() {
       lastSeen: admin.firestore.FieldValue.serverTimestamp(),
     });
   }
+
+  const assetsRef = db.collection("assets").doc("global");
+  const assetsDoc = await assetsRef.get();
+
+  if (!assetsDoc.exists) {
+    await assetsRef.set({
+      mission: "Providing automated feeding solutions for strays.",
+      vision: "A world where every stray has food access.",
+      systemStatus: "Operational",
+    });
+  }
 }
 
 /* ================================
@@ -57,14 +68,22 @@ async function startServer() {
   await initStations();
 
   const app = express();
-  const PORT: number = Number(process.env.PORT || 3006);
+
+  // ✅ RAILWAY FIX: MUST USE process.env.PORT
+  const PORT = Number(process.env.PORT);
 
   app.use(express.json());
 
+  /* ================================
+     HEALTH CHECK (VERY IMPORTANT)
+  ================================= */
   app.get("/", (_, res) => {
     res.send("🔥 Pawfeeder API is running");
   });
 
+  /* ================================
+     DISPENSE API
+  ================================= */
   app.post("/api/dispense", async (req, res) => {
     if (!db) {
       return res.status(500).json({ error: "Database not initialized" });
@@ -106,11 +125,14 @@ async function startServer() {
 
       res.status(201).json({ success: true, id: logId });
     } catch (error) {
-      console.error(error);
+      console.error("Dispense Error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
+  /* ================================
+     VITE FRONTEND
+  ================================= */
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -128,6 +150,9 @@ async function startServer() {
     });
   }
 
+  /* ================================
+     START LISTENER (RAILWAY SAFE)
+  ================================= */
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`);
   });

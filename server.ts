@@ -15,10 +15,10 @@ let db: admin.firestore.Firestore | null = null;
 
 try {
   admin.initializeApp({
-  credential: admin.credential.cert(
-    JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT as string)
-  ),
-});
+    credential: admin.credential.cert(
+      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT as string)
+    ),
+  });
 
   db = admin.firestore();
   console.log("🔥 Firebase Admin initialized successfully");
@@ -47,17 +47,6 @@ async function initStations() {
       lastSeen: admin.firestore.FieldValue.serverTimestamp(),
     });
   }
-
-  const assetsRef = db.collection("assets").doc("global");
-  const assetsDoc = await assetsRef.get();
-
-  if (!assetsDoc.exists) {
-    await assetsRef.set({
-      mission: "Providing automated feeding solutions for strays.",
-      vision: "A world where every stray has food access.",
-      systemStatus: "Operational",
-    });
-  }
 }
 
 /* ================================
@@ -68,22 +57,14 @@ async function startServer() {
   await initStations();
 
   const app = express();
-
-  // ✅ FIX: Railway uses process.env.PORT
   const PORT: number = Number(process.env.PORT || 3006);
 
   app.use(express.json());
 
-  /* ================================
-     SIMPLE HEALTH CHECK (IMPORTANT)
-  ================================= */
   app.get("/", (_, res) => {
     res.send("🔥 Pawfeeder API is running");
   });
 
-  /* ================================
-     DISPENSE API
-  ================================= */
   app.post("/api/dispense", async (req, res) => {
     if (!db) {
       return res.status(500).json({ error: "Database not initialized" });
@@ -108,52 +89,28 @@ async function startServer() {
       });
 
       const stationRef = db.collection("stations").doc(location);
-      const stationDoc = await stationRef.get();
 
-      let updateData: any = {
-        lastSeen: timestamp,
-      };
-
-      if (stationDoc.exists) {
-        const current = stationDoc.data()?.hopperLevels || { cat: 100, dog: 100 };
-
-        updateData.hopperLevels = {
-          cat:
-            typeof catLevel === "number"
-              ? catLevel
-              : type === "Cat"
-              ? Math.max(0, current.cat - coins)
-              : current.cat,
-
-          dog:
-            typeof dogLevel === "number"
-              ? dogLevel
-              : type === "Dog"
-              ? Math.max(0, current.dog - coins)
-              : current.dog,
-        };
-      } else {
-        updateData.name = location;
-        updateData.hopperLevels = { cat: 100, dog: 100 };
-      }
-
-      if (typeof lat === "number" && typeof lng === "number") {
-        updateData.lat = lat;
-        updateData.lng = lng;
-      }
-
-      await stationRef.set(updateData, { merge: true });
+      await stationRef.set(
+        {
+          name: location,
+          hopperLevels: {
+            cat: type === "Cat" ? 100 - coins : 100,
+            dog: type === "Dog" ? 100 - coins : 100,
+          },
+          lastSeen: timestamp,
+          lat,
+          lng,
+        },
+        { merge: true }
+      );
 
       res.status(201).json({ success: true, id: logId });
     } catch (error) {
-      console.error("Dispense Error:", error);
+      console.error(error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  /* ================================
-     VITE (PRODUCTION SAFE)
-  ================================= */
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -171,7 +128,6 @@ async function startServer() {
     });
   }
 
-  // ✅ FIXED LISTEN (NO TYPE ERROR)
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`);
   });

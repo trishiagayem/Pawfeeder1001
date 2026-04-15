@@ -90,20 +90,21 @@ app.post("/api/dispense", async (req, res) => {
 });
 
 /* ================================
-   🚀 SERVE DASHBOARD (IMPORTANT FIX)
+   🚀 SERVE DASHBOARD (FIXED)
 ================================ */
 
-const distPath = path.join(process.cwd(), "dist");
+/* FIX: stable path for Railway */
+const distPath = path.resolve("dist");
 
 /* Serve React build */
 app.use(express.static(distPath));
 
-/* DASHBOARD ROUTE */
+/* Dashboard route */
 app.get("/", (_, res) => {
   res.sendFile(path.join(distPath, "index.html"));
 });
 
-/* React fallback routes */
+/* React fallback (important for routes) */
 app.get("*", (_, res) => {
   res.sendFile(path.join(distPath, "index.html"));
 });

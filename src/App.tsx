@@ -142,7 +142,7 @@ export default function App() {
     </button>
   </div>
 );
-    <AuthProvider>
+      <AuthProvider>
       <AppContent />
     </AuthProvider>
   );

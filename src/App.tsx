@@ -113,9 +113,8 @@ interface LocationInfo {
   address: string;
 }
  return (
-    <div style={{ padding: 20 }}>
-      <h1>🐾 Pawfeeder Dashboard</h1>
-      <p>System Online</p>
+    <div>
+      <AppContent />
     </div>
   );
 }

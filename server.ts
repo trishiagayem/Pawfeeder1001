@@ -1,5 +1,6 @@
 import express from "express";
 import admin from "firebase-admin";
+import path from "path";
 
 /* ================================
    EXPRESS APP
@@ -31,7 +32,6 @@ try {
     });
 
     db = admin.firestore();
-
     console.log("🔥 Firebase Admin initialized successfully");
   } else {
     console.warn("⚠️ FIREBASE_SERVICE_ACCOUNT is missing");
@@ -41,20 +41,12 @@ try {
 }
 
 /* ================================
-   HEALTH CHECK (REQUIRED FOR RAILWAY)
+   API ROUTES
 ================================ */
-
-app.get("/", (_, res) => {
-  res.status(200).send("WORKING ✅");
-});
 
 app.get("/test", (_, res) => {
   res.json({ status: "API OK" });
 });
-
-/* ================================
-   DISPENSE API
-================================ */
 
 app.post("/api/dispense", async (req, res) => {
   if (!db) return res.status(500).json({ error: "DB not ready" });
@@ -98,11 +90,30 @@ app.post("/api/dispense", async (req, res) => {
 });
 
 /* ================================
+   🚀 SERVE DASHBOARD (IMPORTANT FIX)
+================================ */
+
+const distPath = path.join(process.cwd(), "dist");
+
+/* Serve React build */
+app.use(express.static(distPath));
+
+/* DASHBOARD ROUTE */
+app.get("/", (_, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
+});
+
+/* React fallback routes */
+app.get("*", (_, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
+});
+
+/* ================================
    START SERVER (RAILWAY CRITICAL)
 ================================ */
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log("🚀 SERVER STARTED");
   console.log("PORT:", PORT);
-  console.log("HEALTH CHECK: /");
+  console.log("DASHBOARD: /");
 });

@@ -114,9 +114,11 @@ interface LocationInfo {
 }
 
 
-export default function App() {
+import { AuthProvider } from "./AuthProvider";
+
+function AppContent() {
   return (
- <div>
+    <div>
       <h1>Dashboard</h1>
 
       <button
@@ -150,7 +152,6 @@ export default function App() {
     </AuthProvider>
   );
 }
-
 function AppContent() {
   const { currentUser, adminProfile, loading, isViewer, setViewerMode } = useAuth();
   const [logs, setLogs] = useState<DispenseLog[]>([]);

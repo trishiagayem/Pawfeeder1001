@@ -48,6 +48,7 @@ app.get("/test", (_, res) => {
   res.json({ status: "API OK" });
 });
 
+/* DISPENSE */
 app.post("/api/dispense", async (req, res) => {
   if (!db) return res.status(500).json({ error: "DB not ready" });
 
@@ -90,10 +91,40 @@ app.post("/api/dispense", async (req, res) => {
 });
 
 /* ================================
+   🚀 RESET SYSTEM (NEW BUTTON API)
+================================ */
+
+app.post("/api/reset", async (_, res) => {
+  if (!db) return res.status(500).json({ error: "DB not ready" });
+
+  try {
+    // reset hopper levels
+    await db.collection("stations").doc("Alijis").set(
+      {
+        hopperLevels: {
+          cat: 100,
+          dog: 100,
+        },
+        lastSeen: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    // clear logs
+    const logs = await db.collection("logs").get();
+    logs.forEach((doc) => doc.ref.delete());
+
+    res.json({ success: true, message: "System reset successful" });
+  } catch (error) {
+    console.error("❌ Reset error:", error);
+    res.status(500).json({ error: "Reset failed" });
+  }
+});
+
+/* ================================
    🚀 SERVE DASHBOARD (FIXED)
 ================================ */
 
-/* FIX: stable path for Railway */
 const distPath = path.resolve("dist");
 
 if (process.env.NODE_ENV === "production") {
@@ -109,7 +140,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 /* ================================
-   START SERVER (RAILWAY CRITICAL)
+   START SERVER
 ================================ */
 
 app.listen(PORT, "0.0.0.0", () => {

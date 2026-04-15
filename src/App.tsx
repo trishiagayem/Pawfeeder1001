@@ -1,3 +1,4 @@
+import { db } from "./firebase";
 import React, { useState, useEffect, useMemo } from "react";
 import { 
   Dog, 
@@ -115,6 +116,33 @@ interface LocationInfo {
 
 export default function App() {
   return (
+return (
+  <div>
+    <h1>Dashboard</h1>
+
+    {/* 🔴 PUT RESET BUTTON HERE */}
+    <button
+      onClick={async () => {
+        await fetch("https://pawfeeder1001-production.up.railway.app/api/reset", {
+          method: "POST",
+        });
+
+        alert("System Reset Successful!");
+      }}
+      style={{
+        padding: "10px 20px",
+        background: "red",
+        color: "white",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
+        marginTop: "20px",
+      }}
+    >
+      Reset System
+    </button>
+  </div>
+);
     <AuthProvider>
       <AppContent />
     </AuthProvider>

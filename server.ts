@@ -2,7 +2,20 @@ import express from "express";
 import admin from "firebase-admin";
 
 /* ================================
-   FIREBASE INIT
+   EXPRESS APP
+================================ */
+
+const app = express();
+app.use(express.json());
+
+/* ================================
+   PORT (RAILWAY SAFE)
+================================ */
+
+const PORT = Number(process.env.PORT || 8080);
+
+/* ================================
+   FIREBASE INIT (SAFE)
 ================================ */
 
 let db: admin.firestore.Firestore | null = null;
@@ -11,39 +24,38 @@ try {
   const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
 
   if (serviceAccountEnv) {
+    const serviceAccount = JSON.parse(serviceAccountEnv);
+
     admin.initializeApp({
-      credential: admin.credential.cert(JSON.parse(serviceAccountEnv)),
+      credential: admin.credential.cert(serviceAccount),
     });
 
     db = admin.firestore();
+
     console.log("🔥 Firebase Admin initialized successfully");
   } else {
-    console.warn("⚠️ Firebase env not found");
+    console.warn("⚠️ FIREBASE_SERVICE_ACCOUNT is missing");
   }
 } catch (error) {
   console.error("❌ Firebase init failed:", error);
 }
 
 /* ================================
-   SERVER START
+   HEALTH CHECK (REQUIRED FOR RAILWAY)
 ================================ */
 
-const app = express();
-const PORT = Number(process.env.PORT || 8080);
-
-app.use(express.json());
-
-/* ✅ ROOT ROUTE (CRITICAL) */
 app.get("/", (_, res) => {
-  res.send("WORKING");
+  res.status(200).send("WORKING ✅");
 });
 
-/* ✅ TEST API */
 app.get("/test", (_, res) => {
   res.json({ status: "API OK" });
 });
 
-/* ✅ DISPENSE API */
+/* ================================
+   DISPENSE API
+================================ */
+
 app.post("/api/dispense", async (req, res) => {
   if (!db) return res.status(500).json({ error: "DB not ready" });
 
@@ -79,13 +91,18 @@ app.post("/api/dispense", async (req, res) => {
     );
 
     res.json({ success: true, id });
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error("❌ Dispense error:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-/* ✅ START SERVER */
+/* ================================
+   START SERVER (RAILWAY CRITICAL)
+================================ */
+
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log("🚀 SERVER STARTED");
+  console.log("PORT:", PORT);
+  console.log("HEALTH CHECK: /");
 });

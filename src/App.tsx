@@ -112,9 +112,14 @@ interface LocationInfo {
   lng: number;
   address: string;
 }
- return (
-    <div>
-      <AppContent />
+import React from "react";
+
+export default function App() {
+  return (
+    <div style={{ padding: 20, fontFamily: "Arial" }}>
+      <h1>🐾 Pawfeeder Dashboard</h1>
+      <p>System Online</p>
+      <p>Firebase + Railway Connected</p>
     </div>
   );
 }

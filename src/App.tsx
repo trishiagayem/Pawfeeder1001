@@ -112,11 +112,6 @@ interface LocationInfo {
   lng: number;
   address: string;
 }
-
-
-import { AuthProvider } from "./AuthProvider";
-
-function AppContent() {
   return (
     <div>
       <h1>Dashboard</h1>

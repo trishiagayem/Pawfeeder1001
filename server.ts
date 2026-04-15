@@ -2,22 +2,12 @@ import express from "express";
 import admin from "firebase-admin";
 import path from "path";
 
-/* ================================
-   EXPRESS APP
-================================ */
-
 const app = express();
 app.use(express.json());
 
-/* ================================
-   PORT
-================================ */
-
 const PORT = Number(process.env.PORT || 8080);
 
-/* ================================
-   FIREBASE INIT
-================================ */
+/* ================= FIREBASE ================= */
 
 let db: admin.firestore.Firestore | null = null;
 
@@ -25,27 +15,21 @@ try {
   const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
 
   if (serviceAccountEnv) {
-    const serviceAccount = JSON.parse(serviceAccountEnv);
-
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+      credential: admin.credential.cert(JSON.parse(serviceAccountEnv)),
     });
 
     db = admin.firestore();
-    console.log("🔥 Firebase Admin initialized");
-  } else {
-    console.warn("⚠️ Missing Firebase env");
+    console.log("🔥 Firebase connected");
   }
-} catch (error) {
-  console.error("❌ Firebase init error:", error);
+} catch (err) {
+  console.error("Firebase error:", err);
 }
 
-/* ================================
-   API
-================================ */
+/* ================= API ================= */
 
 app.get("/test", (_, res) => {
-  res.json({ status: "API OK" });
+  res.json({ ok: true });
 });
 
 app.post("/api/dispense", async (req, res) => {
@@ -80,14 +64,11 @@ app.post("/api/dispense", async (req, res) => {
 
     res.json({ success: true, id });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "server error" });
   }
 });
 
-/* ================================
-   SERVE DASHBOARD
-================================ */
+/* ================= SERVE REACT BUILD ================= */
 
 const distPath = path.join(process.cwd(), "dist");
 
@@ -97,11 +78,8 @@ app.get("*", (_, res) => {
   res.sendFile(path.join(distPath, "index.html"));
 });
 
-/* ================================
-   START SERVER
-================================ */
+/* ================= START ================= */
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("🚀 SERVER STARTED");
-  console.log("PORT:", PORT);
+  console.log("🚀 Server running on", PORT);
 });

@@ -1,4 +1,4 @@
-add here serverts import express from "express";
+import express from "express";
 import admin from "firebase-admin";
 import path from "path";
 
@@ -10,13 +10,13 @@ const app = express();
 app.use(express.json());
 
 /* ================================
-   PORT (RAILWAY SAFE)
+   PORT
 ================================ */
 
 const PORT = Number(process.env.PORT || 8080);
 
 /* ================================
-   FIREBASE INIT (SAFE)
+   FIREBASE INIT
 ================================ */
 
 let db: admin.firestore.Firestore | null = null;
@@ -32,16 +32,16 @@ try {
     });
 
     db = admin.firestore();
-    console.log("🔥 Firebase Admin initialized successfully");
+    console.log("🔥 Firebase Admin initialized");
   } else {
-    console.warn("⚠️ FIREBASE_SERVICE_ACCOUNT is missing");
+    console.warn("⚠️ Missing Firebase env");
   }
 } catch (error) {
-  console.error("❌ Firebase init failed:", error);
+  console.error("❌ Firebase init error:", error);
 }
 
 /* ================================
-   API ROUTES
+   API
 ================================ */
 
 app.get("/test", (_, res) => {
@@ -53,10 +53,6 @@ app.post("/api/dispense", async (req, res) => {
 
   try {
     const { location, type, coins, lat, lng } = req.body;
-
-    if (!location || !type || typeof coins !== "number") {
-      return res.status(400).json({ error: "Missing fields" });
-    }
 
     const id = Math.random().toString(36).substring(7);
 
@@ -83,37 +79,29 @@ app.post("/api/dispense", async (req, res) => {
     );
 
     res.json({ success: true, id });
-  } catch (error) {
-    console.error("❌ Dispense error:", error);
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
 /* ================================
-   🚀 SERVE DASHBOARD (FIXED)
+   SERVE DASHBOARD
 ================================ */
 
-/* FIX: stable path for Railway */
-const distPath = path.resolve("dist");
+const distPath = path.join(process.cwd(), "dist");
 
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(distPath));
+app.use(express.static(distPath));
 
-  app.get("/", (_, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
-  });
-
-  app.get("*", (_, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
-  });
-}
+app.get("*", (_, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
+});
 
 /* ================================
-   START SERVER (RAILWAY CRITICAL)
+   START SERVER
 ================================ */
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log("🚀 SERVER STARTED");
   console.log("PORT:", PORT);
-  console.log("DASHBOARD: /");
 });

@@ -96,18 +96,17 @@ app.post("/api/dispense", async (req, res) => {
 /* FIX: stable path for Railway */
 const distPath = path.resolve("dist");
 
-/* Serve React build */
-app.use(express.static(distPath));
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(distPath));
 
-/* Dashboard route */
-app.get("/", (_, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
-});
+  app.get("/", (_, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
 
-/* React fallback (important for routes) */
-app.get("*", (_, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
-});
+  app.get("*", (_, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
 
 /* ================================
    START SERVER (RAILWAY CRITICAL)

@@ -116,7 +116,6 @@ interface LocationInfo {
 
 export default function App() {
   return (
-return (
   <div>
     <h1>Dashboard</h1>
 

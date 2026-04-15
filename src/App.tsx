@@ -113,6 +113,14 @@ interface LocationInfo {
   address: string;
 }
 return (
+    <div style={{ padding: 20 }}>
+      <h1>🐾 Pawfeeder Dashboard</h1>
+      <p>System Online</p>
+    </div>
+  );
+}
+
+export default App;
 
 function AppContent() {
   const { currentUser, adminProfile, loading, isViewer, setViewerMode } = useAuth();

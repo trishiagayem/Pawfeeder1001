@@ -112,7 +112,18 @@ interface LocationInfo {
   lng: number;
   address: string;
 }
-  return (
+
+
+export default function App() {
+return (
+  <div>
+    {/* your dashboard UI */}
+  </div>
+);
+}
+
+export default App;
+
 function AppContent() {
   const { currentUser, adminProfile, loading, isViewer, setViewerMode } = useAuth();
   const [logs, setLogs] = useState<DispenseLog[]>([]);

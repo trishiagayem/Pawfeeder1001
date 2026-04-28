@@ -3,13 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "tsx server.ts",
-    "build": "vite build && tsc -p tsconfig.backend.json",
-    "start": "node dist/server.js",
-    "preview": "vite preview",
-    "lint": "tsc --noEmit",
-    "clean": "rm -rf dist"
+"scripts": {
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview",
+  "lint": "tsc --noEmit",
+  "clean": "rm -rf dist"
+}
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
